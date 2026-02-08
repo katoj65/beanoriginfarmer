@@ -52,4 +52,4 @@ jobs:
 
       # 9. Build Android APK (NO emulator)
       - name: Build Android APK
-        run: php artisan native:build android --debug
+       run: php artisan native:build --platform=android --debug
