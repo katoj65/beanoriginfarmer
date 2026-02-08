@@ -10,46 +10,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout code
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Setup PHP (IMPORTANT)
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.5'
+          php-version: '8.3' # Note: PHP 8.5 is quite new; 8.3 is the current stable standard for NativePHP
           tools: composer
-          extensions: mbstring, intl, curl, zip
-          coverage: none
 
-      # 3. Verify PHP version (debug safety)
-      - name: Verify PHP
-        run: php -v
-
-      # 4. Install Composer dependencies
       - name: Install dependencies
-        run: composer install --no-interaction --prefer-dist
+        run: |
+          composer install --no-interaction --prefer-dist
+          composer require nativephp/android --no-interaction
 
-      # 5. Setup Java (required by Android)
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'temurin'
           java-version: '17'
 
-      # 6. Install Android SDK
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      # 7. Accept Android licenses
-      - name: Accept Android licenses
-        run: yes | sdkmanager --licenses
-
-      # 8. Install NativePHP Android runtime
-      - name: NativePHP install
-        run: php artisan native:install --no-interaction
-
-      # 9. Build Android APK (NO emulator)
       - name: Build Android APK
-        run: php artisan native:build android --debug
+        run: php artisan native:build-android --debug
+        env:
+          # Some NativePHP builds require the NODE_ENV or specific paths
+          NODE_ENV: production
