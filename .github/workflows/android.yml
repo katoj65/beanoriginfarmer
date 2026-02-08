@@ -1,53 +1,55 @@
-name: Build NativePHP Android
+name: NativePHP Android Build
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+  pull_request:
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      # 1. Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up PHP
+      # 2. Setup PHP (IMPORTANT)
+      - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
-          extensions: mbstring, zip
+          php-version: '8.5'
+          tools: composer
+          extensions: mbstring, intl, curl, zip
           coverage: none
 
-      - name: Install Composer dependencies
+      # 3. Verify PHP version (debug safety)
+      - name: Verify PHP
+        run: php -v
+
+      # 4. Install Composer dependencies
+      - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
-      - name: Set up Java
+      # 5. Setup Java (required by Android)
+      - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
+      # 6. Install Android SDK
+      - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      # 7. Accept Android licenses
       - name: Accept Android licenses
         run: yes | sdkmanager --licenses
 
-      - name: Install Android components
-        run: |
-          sdkmanager "platform-tools" \
-                     "platforms;android-33" \
-                     "build-tools;33.0.2" \
-                     "ndk;25.2.9519653" \
-                     "cmake;3.22.1"
+      # 8. Install NativePHP Android runtime
+      - name: NativePHP install
+        run: php artisan native:install --no-interaction
 
-      - name: Build Android app
-        run: php artisan native:android
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: nativephp-apk
-          path: nativephp/android/app/build/outputs/apk/debug/*.apk
+      # 9. Build Android APK (NO emulator)
+      - name: Build Android APK
+        run: php artisan native:build android --debug
